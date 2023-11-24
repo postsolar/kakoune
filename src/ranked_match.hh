@@ -21,9 +21,9 @@ inline UsedLetters to_lower(UsedLetters letters)
 
 struct RankedMatch
 {
-    RankedMatch(StringView candidate, StringView query);
+    RankedMatch(StringView candidate, StringView query, size_t input_order = 0);
     RankedMatch(StringView candidate, UsedLetters candidate_letters,
-                StringView query, UsedLetters query_letters);
+                StringView query, UsedLetters query_letters, size_t input_order = 0);
 
     const StringView& candidate() const { return m_candidate; }
     bool operator<(const RankedMatch& other) const;
@@ -33,7 +33,7 @@ struct RankedMatch
 
 private:
     template<typename TestFunc>
-    RankedMatch(StringView candidate, StringView query, TestFunc test);
+    RankedMatch(StringView candidate, StringView query, TestFunc test, size_t input_order);
 
     enum class Flags : int
     {
@@ -54,6 +54,7 @@ private:
     Flags m_flags = Flags::None;
     int m_word_boundary_match_count = 0;
     int m_max_index = 0;
+    size_t m_input_order;
 };
 
 }

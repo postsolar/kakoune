@@ -53,12 +53,13 @@ struct InsertCompletion
 {
     struct Candidate
     {
+        size_t input_order;
         String completion;
         String on_select;
         DisplayLine menu_entry;
 
         bool operator==(const Candidate& other) const { return completion == other.completion; }
-        auto operator<=>(const Candidate& other) const { return completion <=> other.completion; }
+        auto operator<=>(const Candidate& other) const { return std::tie(completion, input_order) <=> std::tie(other.completion, other.input_order); }
     };
     using CandidateList = Vector<Candidate, MemoryDomain::Completion>;
 

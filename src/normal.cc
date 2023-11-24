@@ -991,6 +991,14 @@ void search_next(Context& context, NormalParams params)
 template<bool smart>
 void use_selection_as_search_pattern(Context& context, NormalParams params)
 {
+
+    auto has_upper = [](const String &s) -> bool {
+        for (CharCount i = 0; i < s.char_length(); i++)
+            if (std::iswupper(s[i]))
+                return true;
+        return false;
+    };
+
     const auto& buffer = context.buffer();
     auto patterns = context.selections() | transform([&](auto&& sel) {
         const auto beg = sel.min(), end = buffer.char_next(sel.max());

@@ -159,6 +159,9 @@ void show_startup_info(Client* local_client, int last_version)
     DisplayLineList info;
     for (auto [version, notes] : version_notes)
     {
+        if (last_version < 0 || last_version > version)
+            continue;
+
         if (version and version <= last_version)
             continue;
 

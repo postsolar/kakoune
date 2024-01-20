@@ -110,12 +110,10 @@ static Optional<SubseqRes> subsequence_match_smart_case(StringView str, StringVi
 }
 
 template<typename TestFunc>
-RankedMatch::RankedMatch(StringView candidate, StringView query, TestFunc func, size_t input_order)
+RankedMatch::RankedMatch(StringView candidate, StringView query, TestFunc func)
 {
     if (query.length() > candidate.length())
         return;
-
-    m_input_order = input_order;
 
     if (query.empty())
     {
@@ -172,15 +170,15 @@ RankedMatch::RankedMatch(StringView candidate, StringView query, TestFunc func, 
 }
 
 RankedMatch::RankedMatch(StringView candidate, UsedLetters candidate_letters,
-                         StringView query, UsedLetters query_letters, size_t input_order)
+                         StringView query, UsedLetters query_letters)
     : RankedMatch{candidate, query, [&] {
         return matches(to_lower(query_letters), to_lower(candidate_letters)) and
                matches(query_letters & upper_mask, candidate_letters & upper_mask);
-    }, input_order} {}
+    }} {}
 
 
-RankedMatch::RankedMatch(StringView candidate, StringView query, size_t input_order)
-    : RankedMatch{candidate, query, [] { return true; }, input_order}
+RankedMatch::RankedMatch(StringView candidate, StringView query)
+    : RankedMatch{candidate, query, [] { return true; }}
 {
 }
 
@@ -207,9 +205,6 @@ bool RankedMatch::operator<(const RankedMatch& other) const
 
     if (m_max_index != other.m_max_index)
         return m_max_index < other.m_max_index;
-
-    if (m_input_order != other.m_input_order)
-        return m_input_order < other.m_input_order;
 
     // Reorder codepoints to improve matching behaviour
     auto order = [](Codepoint cp) { return cp == '/' ? 0 : cp; };
@@ -266,7 +261,6 @@ UnitTest test_ranked_match{[] {
     kak_assert(preferred("so", "source", "source_data"));
     kak_assert(not preferred("so", "source_data", "source"));
     kak_assert(not preferred("so", "source", "source"));
-    kak_assert(RankedMatch{"b", "", 0} < RankedMatch{"a", "", 1}); // Use input order for user input
     kak_assert(preferred("wo", "single/word", "multiw/ord"));
     kak_assert(preferred("foobar", "foo/bar/foobar", "foo/bar/baz"));
     kak_assert(preferred("db", "delete-buffer", "debug"));

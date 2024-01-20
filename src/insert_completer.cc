@@ -181,7 +181,7 @@ InsertCompletion complete_word(const SelectionList& sels,
         else
             menu_entry.push_back({ m.candidate().str(), {} });
 
-        candidates.push_back({0, m.candidate().str(), "", std::move(menu_entry)});
+        candidates.push_back({m.candidate().str(), "", std::move(menu_entry)});
         return true;
     });
 
@@ -221,7 +221,7 @@ InsertCompletion complete_filename(const SelectionList& sels,
     {
         for (auto& filename : Kakoune::complete_filename(prefix,
                                                          options["ignored_files"].get<Regex>()))
-            candidates.push_back({ 0, filename, "", {filename, {}} });
+            candidates.push_back({ filename, "", {filename, {}} });
     }
     else
     {
@@ -241,7 +241,7 @@ InsertCompletion complete_filename(const SelectionList& sels,
                                                              options["ignored_files"].get<Regex>()))
             {
                 StringView candidate = filename.substr(dir.length());
-                candidates.push_back({ 0, candidate.str(), "", {candidate.str(), {}} });
+                candidates.push_back({ candidate.str(), "", {candidate.str(), {}} });
             }
 
             visited_dirs.push_back(std::move(dir));
@@ -298,9 +298,9 @@ InsertCompletion complete_option(const SelectionList& sels,
     StringView query = buffer.substr(coord, cursor_pos);
     Vector<RankedMatchAndInfo> matches;
 
-    for (auto&& [i, candidate] : opt.list | enumerate())
+    for (auto& candidate : opt.list)
     {
-        if (RankedMatchAndInfo match{std::get<0>(candidate), query, i})
+        if (RankedMatchAndInfo match{std::get<0>(candidate), query})
         {
             match.on_select = std::get<1>(candidate);
             auto& menu = std::get<2>(candidate);
@@ -324,8 +324,8 @@ InsertCompletion complete_option(const SelectionList& sels,
     {
         if (candidates.empty() or candidates.back().completion != first->candidate()
             or candidates.back().on_select != first->on_select)
-            candidates.push_back({ candidates.size(), first->candidate().str(),
-                                   first->on_select.str(), std::move(first->menu_entry) });
+            candidates.push_back({ first->candidate().str(), first->on_select.str(),
+                                   std::move(first->menu_entry) });
         std::pop_heap(first, last--, greater);
     }
 
@@ -374,7 +374,7 @@ InsertCompletion complete_line(const SelectionList& sels,
 
             if (prefix == candidate.substr(0_byte, prefix.length()))
             {
-                candidates.push_back({0, candidate.str(), "", {expand_tabs(candidate, tabstop, column), {}} });
+                candidates.push_back({candidate.str(), "", {expand_tabs(candidate, tabstop, column), {}} });
                 // perf: it's unlikely the user intends to search among >10 candidates anyway
                 if (candidates.size() == 100)
                     break;
@@ -610,7 +610,7 @@ bool InsertCompleter::try_complete(Func complete_func)
     kak_assert(m_completions.begin <= sels.main().cursor());
     m_current_candidate = m_completions.candidates.size();
     menu_show();
-    m_completions.candidates.push_back({m_completions.candidates.size(), sels.buffer().string(m_completions.begin, m_completions.end), "", {}});
+    m_completions.candidates.push_back({sels.buffer().string(m_completions.begin, m_completions.end), "", {}});
     return true;
 }
 

@@ -91,6 +91,8 @@ static Optional<SubseqRes> subsequence_match_smart_case(StringView str, StringVi
         if (it == str.end())
             return {};
         const Codepoint c = utf8::read_codepoint(subseq_it, subseq.end());
+        if (single_word and not is_word(c))
+            single_word = false;
         while (true)
         {
             auto str_c = utf8::read_codepoint(it, str.end());
@@ -141,7 +143,8 @@ RankedMatch::RankedMatch(StringView candidate, StringView query, TestFunc func)
     {
         m_flags |= Flags::BaseName;
         if ((candidate.end() - it) >= query.length() and
-            std::equal(query.begin(), query.end(), it))
+            std::equal(Utf8It{query.begin(), query}, Utf8It{query.end(), query}, Utf8It{it, candidate},
+                       [](Codepoint query, Codepoint candidate) { return smartcase_eq(candidate, query); }))
             m_flags |= Flags::Prefix;
     }
 
@@ -205,6 +208,9 @@ bool RankedMatch::operator<(const RankedMatch& other) const
 
     if (m_max_index != other.m_max_index)
         return m_max_index < other.m_max_index;
+
+    if (m_input_sequence_number != other.m_input_sequence_number)
+        return m_input_sequence_number < other.m_input_sequence_number;
 
     // Reorder codepoints to improve matching behaviour
     auto order = [](Codepoint cp) { return cp == '/' ? 0 : cp; };
@@ -279,6 +285,8 @@ UnitTest test_ranked_match{[] {
     kak_assert(preferred("foo_bar", "bar/foo_bar.baz", "foo_bar/qux.baz"));
     kak_assert(preferred("fb", "foo_bar/", "foo.bar"));
     kak_assert(preferred("foo_bar", "test_foo_bar", "foo_test_bar"));
+    kak_assert(preferred("rm.cc", "src/ranked_match.cc", "test/README.asciidoc"));
+    kak_assert(preferred("luaremote", "src/script/LuaRemote.cpp", "tests/TestLuaRemote.cpp"));
 }};
 
 UnitTest test_used_letters{[]()

@@ -158,6 +158,7 @@ private:
 
     struct Synchronized
     {
+        bool queried : 1;
         bool supported : 1;
         bool set : 1;
         bool requested : 1;

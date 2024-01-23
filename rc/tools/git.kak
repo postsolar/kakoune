@@ -62,13 +62,12 @@ define-command -params 1.. \
         Available commands:
             add
             apply (alias for "patch git apply")
-            blame
+            blame (toggle blame annotations)
             checkout
             commit
             diff
             edit
             grep
-            hide-blame
             hide-diff
             init
             log
@@ -91,7 +90,6 @@ define-command -params 1.. \
             diff \
             edit \
             grep \
-            hide-blame \
             hide-diff \
             init \
             log \
@@ -153,11 +151,24 @@ define-command -params 1.. \
               }"
     }
 
+    hide_blame() {
+        printf %s "
+            set-option buffer=$kak_bufname git_blame_flags $kak_timestamp
+            remove-highlighter window/git-blame
+        "
+    }
+
     run_git_blame() {
+        echo >${kak_command_fifo} "try %{
+            add-highlighter window/git-blame flag-lines Information git_blame_flags
+            echo -to-file ${kak_response_fifo}
+        } catch %{
+            echo -to-file ${kak_response_fifo} 'hide_blame; exit'
+        }"
+        eval $(cat ${kak_response_fifo})
         (
             cd_bufdir
             printf %s "evaluate-commands -client '$kak_client' %{
-                      try %{ add-highlighter window/git-blame flag-lines Information git_blame_flags }
                       set-option buffer=$kak_bufname git_blame_flags '$kak_timestamp'
                   }" | kak -p ${kak_session}
                   git blame "$@" --incremental ${kak_buffile} | perl -wne '
@@ -365,10 +376,7 @@ define-command -params 1.. \
             run_git_blame "$@"
             ;;
         hide-blame)
-            printf %s "try %{
-                set-option buffer=$kak_bufname git_blame_flags $kak_timestamp
-                remove-highlighter window/git-blame
-            }"
+            hide_blame
             ;;
         show-diff)
             echo 'try %{ add-highlighter window/git-diff flag-lines Default git_diff_flags }'
